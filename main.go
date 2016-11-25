@@ -48,6 +48,7 @@ func init() {
 }
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	configContent, err := ioutil.ReadFile("config.yml")
 	if err != nil {
 		log.Fatalf("Config file not found: %v", err)

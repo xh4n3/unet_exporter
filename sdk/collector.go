@@ -52,8 +52,6 @@ func (c *Collector) ListEIPs() {
 }
 
 func (c *Collector) ListBandwidthUsages() (map[string]float32, float32){
-	log.Println(c.eipResourceMap)
-
 	usageResp, err := c.uNet.DescribeBandwidthUsage(&unet.DescribeBandwidthUsageParams{
 		Region: c.target.Region,
 	})

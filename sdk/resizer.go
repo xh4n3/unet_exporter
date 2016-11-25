@@ -37,13 +37,12 @@ func (r *Resizer) GetCurrentBandwidth() (int, error) {
 }
 
 func (r *Resizer) SetCurrentBandwidth(newBandwidth int) error {
-	log.Println(newBandwidth)
+	log.Printf("Switching bandwidth to %v\n", newBandwidth)
 	_, err := r.uNet.ResizeShareBandwidth(&unet.ResizeShareBandwidthParams{
 		Region: r.target.Region,
 		ShareBandwidth: newBandwidth,
 		ShareBandwidthId: r.target.Name,
 	})
-
 	if err != nil {
 		return err
 	}
