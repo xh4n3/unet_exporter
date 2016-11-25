@@ -97,9 +97,13 @@ func triggerHandler(w http.ResponseWriter, req *http.Request) {
 	for _, target := range config.Targets {
 		if target.Name == resource {
 			up, err := strconv.ParseBool(req.URL.Query().Get("up"))
-			break
+			if err != nil {
+				log.Println(err)
+				break
+			}
 			err = triggerResizer(up, target)
 			if err != nil {
+				log.Println(err)
 				break
 			} else {
 				w.WriteHeader(200)
@@ -120,6 +124,7 @@ func triggerResizer(up bool, target *sdk.Target) error {
 		err = resizer.DecreaseBandwidth()
 	}
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	return nil

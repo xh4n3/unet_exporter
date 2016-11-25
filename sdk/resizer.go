@@ -38,31 +38,39 @@ func (r *Resizer) GetCurrentBandwidth() (int, error) {
 
 func (r *Resizer) SetCurrentBandwidth(newBandwidth int) error {
 	log.Println(newBandwidth)
+	_, err := r.uNet.ResizeShareBandwidth(&unet.ResizeShareBandwidthParams{
+		Region: r.target.Region,
+		ShareBandwidth: newBandwidth,
+		ShareBandwidthId: r.target.Name,
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (r *Resizer) IncreaseBandwidth() error {
 	currentBandwidth, err := r.GetCurrentBandwidth()
 	if err != nil {
-		log.Printf("unable to get current bandwidth for shareBandwidth %v: %v", r.target.Name, err)
+		return errors.Errorf("unable to get current bandwidth for shareBandwidth %v: %v", r.target.Name, err)
 	}
 	if currentBandwidth + r.target.Step <= r.target.UpLimit {
-		r.SetCurrentBandwidth(currentBandwidth + r.target.Step)
+		return r.SetCurrentBandwidth(currentBandwidth + r.target.Step)
 	} else {
 		return errors.New("uplimit hit")
 	}
-	return nil
 }
 
 func (r *Resizer) DecreaseBandwidth() error {
 	currentBandwidth, err := r.GetCurrentBandwidth()
 	if err != nil {
-		log.Printf("unable to get current bandwidth for shareBandwidth %v: %v", r.target.Name, err)
+		return errors.Errorf("unable to get current bandwidth for shareBandwidth %v: %v", r.target.Name, err)
 	}
 	if currentBandwidth - r.target.Step >= r.target.DownLimit {
-		r.SetCurrentBandwidth(currentBandwidth - r.target.Step)
+		return r.SetCurrentBandwidth(currentBandwidth - r.target.Step)
 	} else {
 		return errors.New("downlimit hit")
 	}
-	return nil
 }

@@ -1,0 +1,22 @@
+# System-wide configs
+global:
+  api_endpoint: "https://api.ucloud.cn"
+  public_key: "public_key"
+  private_key: "private_key"
+  # This exporter listens at this port
+  mertric_port: ":8080"
+  # Scrape ucloud api every 10 secs
+  interval: 10
+
+# A list of shareBandwidth to be monitored
+targets:
+    # shareBandwidthID
+  - name: "bwshare-q012a"
+    # upper limit of this shareBandwidth
+    up_limit: 200
+    # lower limit of this shareBandwidth
+    down_limit: 50
+    # shareBandwidth zone
+    region: "cn-bj1"
+    # up or down bandwidth by 5MB every time
+    step: 5
