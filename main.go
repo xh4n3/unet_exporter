@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
@@ -12,7 +14,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"strconv"
 )
 
 var (
@@ -94,14 +95,35 @@ func main() {
 }
 
 func triggerHandler(w http.ResponseWriter, req *http.Request) {
-	resource := req.URL.Query().Get("resource")
-	for _, target := range config.Targets {
-		if target.Name == resource {
-			up, err := strconv.ParseBool(req.URL.Query().Get("up"))
-			if err != nil {
-				log.Println(err)
-				break
+	decoder := json.NewDecoder(req.Body)
+
+	var webhookMessage notify.WebhookMessage
+	err := decoder.Decode(&webhookMessage)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	var shareBandwidthID string
+	var up bool
+	isResizerWebhook := false
+	for _, alert := range webhookMessage.Alerts {
+		if alert.Labels["job"] == "bandwidth-resizer" {
+			isResizerWebhook = true
+			shareBandwidthID = alert.Labels["shareBandwidth"]
+			if alert.Labels["alertname"] == "ShareBandwidthTooLow" {
+				up = true
 			}
+			break
+		}
+	}
+	if !isResizerWebhook {
+		return
+	}
+
+	for _, target := range config.Targets {
+		if target.Name == shareBandwidthID {
 			err = triggerResizer(up, target)
 			if err != nil {
 				log.Println(err)
