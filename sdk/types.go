@@ -14,9 +14,10 @@ type Global struct {
 }
 
 type Target struct {
-	Name      string `yaml:"name"`
-	UpLimit   int    `yaml:"up_limit"`
-	DownLimit int    `yaml:"down_limit"`
-	Region    string `yaml:"region"`
-	Step      int    `yaml:"step"`
+	Name             string `yaml:"name"`
+	UpLimit          int    `yaml:"up_limit"`
+	DownLimit        int    `yaml:"down_limit"`
+	Region           string `yaml:"region"`
+	Step             int    `yaml:"step"`
+	DefaultBandwidth int    `yaml:"default_bandwidth"`
 }

@@ -13,9 +13,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 )
 
 var (
@@ -40,6 +42,13 @@ var (
 		},
 		[]string{"shareBandwidth"},
 	)
+	BandwidthMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "bandwidth_metric_up",
+			Help: "Bandwidth metric up",
+		},
+		[]string{"shareBandwidth"},
+	)
 	config *sdk.Config
 	uNet   *unet.UNet
 )
@@ -48,6 +57,7 @@ func init() {
 	prometheus.MustRegister(ResourceBandwidthUsage)
 	prometheus.MustRegister(TotalBandwidthUsage)
 	prometheus.MustRegister(CurrentBandwidth)
+	prometheus.MustRegister(BandwidthMetric)
 }
 
 func main() {
@@ -74,7 +84,14 @@ func main() {
 	go func() {
 		for {
 			resourceBandwidthMap, bandwidthTotalUsed := collector.ListBandwidthUsages()
-			currentBandwidth := collector.GetCurrentBandwidth()
+			currentBandwidth, err := collector.GetCurrentBandwidth()
+
+			if err != nil {
+				log.Println(err)
+				BandwidthMetric.WithLabelValues(shareBandwidth.Name).Set(float64(0))
+			} else {
+				BandwidthMetric.WithLabelValues(shareBandwidth.Name).Set(float64(1))
+			}
 
 			for resourceName, usage := range resourceBandwidthMap {
 				ResourceBandwidthUsage.WithLabelValues(shareBandwidth.Name, resourceName).Set(float64(usage))
@@ -89,8 +106,33 @@ func main() {
 	// Expose the registered metrics via HTTP.
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/trigger", triggerHandler)
-	log.Fatal(http.ListenAndServe(config.Global.MertricPort, nil))
+	go func() {
+		err := http.ListenAndServe(config.Global.MertricPort, nil)
+		if err != nil {
+			switchToDefault()
+			log.Fatal(err)
+		}
+	}()
 
+	//catch exit signals
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	log.Println(<-ch)
+	switchToDefault()
+
+}
+
+//switch to default bandwidth before exit
+func switchToDefault() {
+	log.Println("switching to defaultBandwidth before exits")
+	for _, target := range config.Targets {
+		resizer := sdk.NewResizer(uNet, target)
+		err := resizer.SetCurrentBandwidth(target.DefaultBandwidth)
+		if err != nil {
+			log.Printf("switching err: %v", err)
+		}
+	}
+	log.Println("Swiching to default finished, exiting.")
 }
 
 func triggerHandler(w http.ResponseWriter, req *http.Request) {
@@ -167,15 +209,14 @@ func envUnet(config *sdk.Config) *unet.UNet {
 	}
 
 	if publicKey == "" {
+		log.Println("Loading PUBLIC_KEY from config file")
 		publicKey = config.Global.PublicKey
 	}
 
 	if privateKey == "" {
+		log.Println("Loading PRIVATE_KEY from config file")
 		privateKey = config.Global.PrivateKey
 	}
-
-	log.Println(publicKey)
-	log.Println(privateKey)
 
 	uNet = unet.New(&ucloud.Config{
 		Credentials: &auth.KeyPair{

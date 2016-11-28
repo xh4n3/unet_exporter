@@ -5,6 +5,7 @@ import (
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
 	"log"
 	"strings"
+	"github.com/pkg/errors"
 )
 
 type Collector struct {
@@ -20,21 +21,21 @@ func NewCollector(uNet *unet.UNet, target *Target) *Collector {
 	}
 }
 
-func (c *Collector) GetCurrentBandwidth() int {
+func (c *Collector) GetCurrentBandwidth() (int, error) {
 	shareBandwidthResp, err := c.uNet.DescribeShareBandwidth(&unet.DescribeShareBandwidthParams{
 		Region: c.target.Region,
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		return 0, err
 	}
 
 	for _, shareBandwidth := range *shareBandwidthResp.DataSet {
 		if shareBandwidth.ShareBandwidthId == c.target.Name {
-			return shareBandwidth.ShareBandwidth
+			return shareBandwidth.ShareBandwidth, nil
 		}
 	}
-	return -1
+	return -1, errors.New("cannot find target shareBandwidth")
 }
 
 func (c *Collector) ListEIPs() {

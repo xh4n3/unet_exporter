@@ -12,6 +12,8 @@ global:
 targets:
     # shareBandwidthID
   - name: "bwshare-q012a"
+    # set to 100 when exiting
+    default_bandwidth: 100
     # upper limit of this shareBandwidth
     up_limit: 200
     # lower limit of this shareBandwidth
