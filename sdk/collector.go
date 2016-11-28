@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
 	"log"
+	"strings"
 )
 
 type Collector struct {
@@ -51,7 +52,7 @@ func (c *Collector) ListEIPs() {
 	}
 }
 
-func (c *Collector) ListBandwidthUsages() (map[string]float32, float32){
+func (c *Collector) ListBandwidthUsages() (map[string]float32, float32) {
 	usageResp, err := c.uNet.DescribeBandwidthUsage(&unet.DescribeBandwidthUsageParams{
 		Region: c.target.Region,
 	})
@@ -65,7 +66,12 @@ func (c *Collector) ListBandwidthUsages() (map[string]float32, float32){
 		if resourceName, ok := c.eipResourceMap[bandwidth.EIPId]; ok {
 			resourceBandwidthMap[resourceName] = bandwidth.CurBandwidth
 		} else {
-			log.Printf("cannot find resourceName for EIP %v\n", bandwidth.EIPId)
+			//EIPId starts with "eip"
+			if strings.Contains(bandwidth.EIPId, "eip") {
+				log.Printf("cannot find resourceName for EIP %v, please restart me after adding eip\n", bandwidth.EIPId)
+			} else {
+				continue
+			}
 		}
 	}
 
@@ -75,7 +81,6 @@ func (c *Collector) ListBandwidthUsages() (map[string]float32, float32){
 	}
 	return resourceBandwidthMap, bandwidthTotalUsed
 }
-
 
 func bandwidthLabel(eipset unet.EIPSet) string {
 	ips := ""
