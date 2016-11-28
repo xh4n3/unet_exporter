@@ -7,6 +7,10 @@ FROM xh4n3/unet_exporter
 COPY config.yml config.yml
 ```
 
+### Passing PRIVATE_KEY and PUBLIC_KEY via env
+
+Pass PUBLIC_KEY and PUBLIC_KEY by `-e`, which will overrides keys in config file.
+
 ### Prometheus Alerts
 ```
 ALERT ShareBandwidthTooHigh

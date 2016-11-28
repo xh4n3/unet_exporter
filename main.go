@@ -14,6 +14,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"os"
+	"strings"
 )
 
 var (
@@ -61,16 +63,13 @@ func main() {
 		log.Fatalf("cannot unmarshal config file: %v", err)
 	}
 
-	uNet = unet.New(&ucloud.Config{
-		Credentials: &auth.KeyPair{
-			PublicKey:  config.Global.PublicKey,
-			PrivateKey: config.Global.PrivateKey,
-		},
-	})
+	uNet := envUnet(config)
 
 	shareBandwidth := config.Targets[0]
 	collector := sdk.NewCollector(uNet, shareBandwidth)
 	collector.ListEIPs()
+
+	log.Println("Collect looping started.")
 
 	go func() {
 		for {
@@ -151,4 +150,38 @@ func triggerResizer(up bool, target *sdk.Target) error {
 		return err
 	}
 	return nil
+}
+
+func envUnet(config *sdk.Config) *unet.UNet {
+	var publicKey, privateKey string
+	for _, env := range os.Environ() {
+		pair := strings.Split(env, "=")
+		if pair[0] == "PUBLIC_KEY" {
+			publicKey = pair[1]
+			continue
+		}
+		if pair[0] == "PRIVATE_KEY" {
+			privateKey = pair[1]
+			continue
+		}
+	}
+
+	if publicKey == "" {
+		publicKey = config.Global.PublicKey
+	}
+
+	if privateKey == "" {
+		privateKey = config.Global.PrivateKey
+	}
+
+	log.Println(publicKey)
+	log.Println(privateKey)
+
+	uNet = unet.New(&ucloud.Config{
+		Credentials: &auth.KeyPair{
+			PublicKey:  publicKey,
+			PrivateKey: privateKey,
+		},
+	})
+	return uNet
 }
