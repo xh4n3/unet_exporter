@@ -20,5 +20,7 @@ targets:
     down_limit: 50
     # shareBandwidth zone
     region: "cn-bj1"
-    # up or down bandwidth by 5MB every time
-    step: 5
+    # turn up bandwidth by 30MB every time
+    up_step: 30
+    # turn down bandwidth by 10MB every time
+    down_step: 10

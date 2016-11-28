@@ -18,6 +18,7 @@ type Target struct {
 	UpLimit          int    `yaml:"up_limit"`
 	DownLimit        int    `yaml:"down_limit"`
 	Region           string `yaml:"region"`
-	Step             int    `yaml:"step"`
 	DefaultBandwidth int    `yaml:"default_bandwidth"`
+	UpStep           int    `yaml:"up_step"`
+	DownStep         int    `yaml:"down_step"`
 }
