@@ -2,22 +2,25 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
+	"github.com/xh4n3/ucloud-sdk-go/service/umon"
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
 	"log"
 	"strings"
-	"github.com/pkg/errors"
 )
 
 type Collector struct {
 	target         *Target
 	uNet           *unet.UNet
+	uMon           *umon.UMon
 	eipResourceMap map[string]string
 }
 
-func NewCollector(uNet *unet.UNet, target *Target) *Collector {
+func NewCollector(uNet *unet.UNet, uMon *umon.UMon, target *Target) *Collector {
 	return &Collector{
 		target: target,
 		uNet:   uNet,
+		uMon:   uMon,
 	}
 }
 
@@ -53,7 +56,7 @@ func (c *Collector) ListEIPs() {
 	}
 }
 
-func (c *Collector) ListBandwidthUsages() (map[string]float32, float32) {
+func (c *Collector) ListBandwidthUsages() map[string]float32 {
 	usageResp, err := c.uNet.DescribeBandwidthUsage(&unet.DescribeBandwidthUsageParams{
 		Region: c.target.Region,
 	})
@@ -76,11 +79,27 @@ func (c *Collector) ListBandwidthUsages() (map[string]float32, float32) {
 		}
 	}
 
-	bandwidthTotalUsed := float32(0)
-	for _, eip := range *usageResp.EIPSet {
-		bandwidthTotalUsed += eip.CurBandwidth
+	return resourceBandwidthMap
+}
+
+func (c *Collector) GetTotalBandwidth() float64 {
+	metricResponse, err := c.uMon.GetMetric(&umon.GetMetricParams{
+		Region:       c.target.Region,
+		ResourceType: "sharebandwidth",
+		ResourceId:   c.target.Name,
+		MetricName:   []string{"BandIn", "BandOut"},
+		TimeRange:    120,
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
-	return resourceBandwidthMap, bandwidthTotalUsed
+	bandIn := *(metricResponse.DataSets.BandIn)
+	bandOut := *(metricResponse.DataSets.BandOut)
+	if len(bandIn) > 0 && len(bandOut) > 0 {
+		total := bandIn[len(bandIn)-1].Value + bandOut[len(bandOut)-1].Value
+		return float64(total / 1024 / 1024)
+	}
+	return float64(0)
 }
 
 func bandwidthLabel(eipset unet.EIPSet) string {

@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/xh4n3/ucloud-sdk-go/service/umon"
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
 	"github.com/xh4n3/ucloud-sdk-go/ucloud"
 	"github.com/xh4n3/ucloud-sdk-go/ucloud/auth"
@@ -51,6 +52,7 @@ var (
 	)
 	config *sdk.Config
 	uNet   *unet.UNet
+	uMon   *umon.UMon
 )
 
 func init() {
@@ -73,18 +75,20 @@ func main() {
 		log.Fatalf("cannot unmarshal config file: %v", err)
 	}
 
-	uNet := envUnet(config)
+	uNet, uMon := envClient(config)
 
 	shareBandwidth := config.Targets[0]
-	collector := sdk.NewCollector(uNet, shareBandwidth)
+	collector := sdk.NewCollector(uNet, uMon, shareBandwidth)
 	collector.ListEIPs()
 
 	log.Println("Collect looping started.")
 
 	go func() {
 		for {
-			resourceBandwidthMap, bandwidthTotalUsed := collector.ListBandwidthUsages()
+
+			resourceBandwidthMap := collector.ListBandwidthUsages()
 			currentBandwidth, err := collector.GetCurrentBandwidth()
+			bandwidthTotalUsed := collector.GetTotalBandwidth()
 
 			if err != nil {
 				log.Println(err)
@@ -126,11 +130,11 @@ func main() {
 func switchToDefault() {
 	log.Println("switching to defaultBandwidth before exits")
 	for _, target := range config.Targets {
-		resizer := sdk.NewResizer(uNet, target)
-		err := resizer.SetCurrentBandwidth(target.DefaultBandwidth)
-		if err != nil {
-			log.Printf("switching err: %v", err)
-		}
+	resizer := sdk.NewResizer(uNet, target, config.Global.DryRun)
+	err := resizer.SetCurrentBandwidth(target.DefaultBandwidth)
+	if err != nil {
+		log.Printf("switching err: %v", err)
+	}
 	}
 	log.Println("Swiching to default finished, exiting.")
 }
@@ -180,7 +184,7 @@ func triggerHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func triggerResizer(up bool, target *sdk.Target) error {
-	resizer := sdk.NewResizer(uNet, target)
+	resizer := sdk.NewResizer(uNet, target, config.Global.DryRun)
 	var err error
 	if up {
 		err = resizer.IncreaseBandwidth()
@@ -194,7 +198,7 @@ func triggerResizer(up bool, target *sdk.Target) error {
 	return nil
 }
 
-func envUnet(config *sdk.Config) *unet.UNet {
+func envClient(config *sdk.Config) (*unet.UNet, *umon.UMon) {
 	var publicKey, privateKey string
 	for _, env := range os.Environ() {
 		pair := strings.Split(env, "=")
@@ -224,5 +228,11 @@ func envUnet(config *sdk.Config) *unet.UNet {
 			PrivateKey: privateKey,
 		},
 	})
-	return uNet
+	uMon = umon.New(&ucloud.Config{
+		Credentials: &auth.KeyPair{
+			PublicKey:  publicKey,
+			PrivateKey: privateKey,
+		},
+	})
+	return uNet, uMon
 }

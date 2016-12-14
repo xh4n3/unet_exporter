@@ -7,20 +7,43 @@ global:
   mertric_port: ":8080"
   # Scrape ucloud api every 10 secs
   interval: 10
+  # If enabled, it will not change bandwidth
+  dry_run: false
 
 # A list of shareBandwidth to be monitored
 targets:
     # shareBandwidthID
   - name: "bwshare-q012a"
-    # set to 100 when exiting
-    default_bandwidth: 100
-    # upper limit of this shareBandwidth
-    up_limit: 200
-    # lower limit of this shareBandwidth
-    down_limit: 50
     # shareBandwidth zone
     region: "cn-bj1"
-    # turn up bandwidth by 30MB every time
-    up_step: 30
-    # turn down bandwidth by 10MB every time
-    down_step: 10
+    # set to 100 when exiting
+    default_bandwidth: 100
+    varied_limit:
+        # define different parameters for different day or time
+      - name: "weekdays_peak"
+        # enabled in Sunday = 0, Monday = 1, etc.
+        weekdays: [1,2,3,4,5]
+        # enabled in these hours
+        hours: [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+        # upper limit of this shareBandwidth
+        up_limit: 200
+        # lower limit of this shareBandwidth
+        down_limit: 50
+        # turn up bandwidth by 30MB every time
+        up_step: 30
+        # turn down bandwidth by 10MB every time
+        down_step: 10
+
+      - name: "weekends_valley"
+        weekdays: [0,6]
+        up_limit: 200
+        down_limit: 50
+        up_step: 30
+        down_step: 10
+
+        # a limit with name 'default' will be used as default bandwidth limit
+      - name: "default"
+        up_limit: 200
+        down_limit: 50
+        up_step: 30
+        down_step: 10

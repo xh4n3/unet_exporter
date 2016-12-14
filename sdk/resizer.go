@@ -5,18 +5,21 @@ import (
 	"github.com/pkg/errors"
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
 	"log"
+	"time"
 )
 
 type Resizer struct {
 	target           *Target
 	uNet             *unet.UNet
+	dryRun           bool
 	currentBandwidth int
 }
 
-func NewResizer(uNet *unet.UNet, target *Target) *Resizer {
+func NewResizer(uNet *unet.UNet, target *Target, dryRun bool) *Resizer {
 	return &Resizer{
 		target: target,
 		uNet:   uNet,
+		dryRun: dryRun,
 	}
 }
 
@@ -39,6 +42,10 @@ func (r *Resizer) GetCurrentBandwidth() (int, error) {
 
 func (r *Resizer) SetCurrentBandwidth(newBandwidth int) error {
 	log.Printf("Switching %v's bandwidth to %v\n", r.target.Name, newBandwidth)
+	if r.dryRun {
+		log.Println("dryRun enabled, nothing will be done.")
+		return nil
+	}
 	_, err := r.uNet.ResizeShareBandwidth(&unet.ResizeShareBandwidthParams{
 		Region:           r.target.Region,
 		ShareBandwidth:   newBandwidth,
@@ -56,10 +63,12 @@ func (r *Resizer) IncreaseBandwidth() error {
 	if err != nil {
 		return errors.Errorf("unable to get current bandwidth for shareBandwidth %v: %v", r.target.Name, err)
 	}
-	if currentBandwidth+r.target.UpStep <= r.target.UpLimit {
-		return r.SetCurrentBandwidth(currentBandwidth + r.target.UpStep)
+	upLimit, _, upStep, _ := r.CurrentLimitAndStep()
+
+	if currentBandwidth+upStep <= upLimit {
+		return r.SetCurrentBandwidth(currentBandwidth + upStep)
 	} else {
-		return fmt.Errorf("uplimit hit at %v", r.target.UpLimit)
+		return fmt.Errorf("uplimit hit at %v", upLimit)
 	}
 }
 
@@ -68,9 +77,44 @@ func (r *Resizer) DecreaseBandwidth() error {
 	if err != nil {
 		return errors.Errorf("unable to get current bandwidth for shareBandwidth %v: %v", r.target.Name, err)
 	}
-	if currentBandwidth-r.target.DownStep >= r.target.DownLimit {
-		return r.SetCurrentBandwidth(currentBandwidth - r.target.DownStep)
+	_, downLimit, _, downStep := r.CurrentLimitAndStep()
+
+	if currentBandwidth-downStep >= downLimit {
+		return r.SetCurrentBandwidth(currentBandwidth - downStep)
 	} else {
-		return fmt.Errorf("downlimit hit at %v", r.target.DownLimit)
+		return fmt.Errorf("downlimit hit at %v", downLimit)
 	}
+}
+
+func (r *Resizer) CurrentLimitAndStep() (int, int, int, int) {
+	now := time.Now()
+	hourNow, _, _ := now.Clock()
+	weekdayNow := int(now.Weekday())
+
+	var defaultLimit *VariedLimit
+
+	for _, limit := range r.target.VariedLimits {
+		if limit.Name == "default" {
+			defaultLimit = limit
+		}
+		if contains(weekdayNow, limit.WeekDays) && contains(hourNow, limit.Hours) {
+			log.Printf("Limit template: %v	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", limit.Name, limit.UpLimit, limit.DownLimit, limit.UpStep, limit.DownStep)
+			return limit.UpLimit, limit.DownLimit, limit.UpStep, limit.DownStep
+		}
+	}
+	if defaultLimit == nil {
+		log.Fatalln("No default limit specified")
+	}
+
+	log.Printf("Limit template: default	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", defaultLimit.UpLimit, defaultLimit.DownLimit, defaultLimit.UpStep, defaultLimit.DownStep)
+	return defaultLimit.UpLimit, defaultLimit.DownLimit, defaultLimit.UpStep, defaultLimit.DownStep
+}
+
+func contains(number int, numbers []int) bool {
+	for _, num := range numbers {
+		if num == number {
+			return true
+		}
+	}
+	return false
 }
