@@ -130,7 +130,7 @@ func main() {
 func switchToDefault() {
 	log.Println("switching to defaultBandwidth before exits")
 	for _, target := range config.Targets {
-	resizer := sdk.NewResizer(uNet, target, config.Global.DryRun)
+	resizer := sdk.NewResizer(uNet, target, config)
 	err := resizer.SetCurrentBandwidth(target.DefaultBandwidth)
 	if err != nil {
 		log.Printf("switching err: %v", err)
@@ -184,7 +184,7 @@ func triggerHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func triggerResizer(up bool, target *sdk.Target) error {
-	resizer := sdk.NewResizer(uNet, target, config.Global.DryRun)
+	resizer := sdk.NewResizer(uNet, target, config)
 	var err error
 	if up {
 		err = resizer.IncreaseBandwidth()

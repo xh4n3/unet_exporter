@@ -3,6 +3,7 @@ package sdk
 type Config struct {
 	Global  *Global   `yaml:"global"`
 	Targets []*Target `yaml:"targets"`
+	Plugins *Plugins  `yaml:"plugins"`
 }
 
 type Global struct {
@@ -12,6 +13,10 @@ type Global struct {
 	MertricPort string `yaml:"mertric_port"`
 	Interval    int    `yaml:"interval"`
 	DryRun      bool   `yaml:"dry_run"`
+}
+
+type Plugins struct {
+	DownLimitAdvisor string `yaml:"down_limit_advisor"`
 }
 
 type Target struct {

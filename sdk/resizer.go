@@ -6,20 +6,25 @@ import (
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
 	"log"
 	"time"
+	"os/exec"
+	"strconv"
+	"strings"
 )
 
 type Resizer struct {
 	target           *Target
 	uNet             *unet.UNet
 	dryRun           bool
+	downLimitAdvisor string
 	currentBandwidth int
 }
 
-func NewResizer(uNet *unet.UNet, target *Target, dryRun bool) *Resizer {
+func NewResizer(uNet *unet.UNet, target *Target, config *Config) *Resizer {
 	return &Resizer{
 		target: target,
 		uNet:   uNet,
-		dryRun: dryRun,
+		dryRun: config.Global.DryRun,
+		downLimitAdvisor: config.Plugins.DownLimitAdvisor,
 	}
 }
 
@@ -98,16 +103,34 @@ func (r *Resizer) CurrentLimitAndStep() (int, int, int, int) {
 			defaultLimit = limit
 		}
 		if contains(weekdayNow, limit.WeekDays) && contains(hourNow, limit.Hours) {
-			log.Printf("Limit template: %v	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", limit.Name, limit.UpLimit, limit.DownLimit, limit.UpStep, limit.DownStep)
-			return limit.UpLimit, limit.DownLimit, limit.UpStep, limit.DownStep
+			log.Printf("Limit template: %v	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", limit.Name, limit.UpLimit, higher(limit.DownLimit, r.AdvisedDownLimit()), limit.UpStep, limit.DownStep)
+			return limit.UpLimit, higher(limit.DownLimit, r.AdvisedDownLimit()), limit.UpStep, limit.DownStep
 		}
 	}
 	if defaultLimit == nil {
 		log.Fatalln("No default limit specified")
 	}
 
-	log.Printf("Limit template: default	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", defaultLimit.UpLimit, defaultLimit.DownLimit, defaultLimit.UpStep, defaultLimit.DownStep)
-	return defaultLimit.UpLimit, defaultLimit.DownLimit, defaultLimit.UpStep, defaultLimit.DownStep
+	log.Printf("Limit template: default	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", defaultLimit.UpLimit, higher(defaultLimit.DownLimit, r.AdvisedDownLimit()), defaultLimit.UpStep, defaultLimit.DownStep)
+	return defaultLimit.UpLimit, higher(defaultLimit.DownLimit, r.AdvisedDownLimit()), defaultLimit.UpStep, defaultLimit.DownStep
+}
+
+func (r *Resizer) AdvisedDownLimit() int {
+	downLimit := 0
+	if r.downLimitAdvisor != "" {
+		output, err := exec.Command("/bin/sh", r.downLimitAdvisor).Output()
+		if err != nil {
+			log.Printf("Limit Advisor Failed: %v", err.Error())
+			return 0
+		}
+		downLimit, err = strconv.Atoi(strings.TrimSpace(string(output)))
+		if err != nil {
+			log.Printf("Read Limit Advisor Result Failed: %v", err.Error())
+			return 0
+		}
+		log.Printf("Limit Advisor suggests down limit at %v", downLimit)
+	}
+	return downLimit
 }
 
 func contains(number int, numbers []int) bool {
@@ -117,4 +140,11 @@ func contains(number int, numbers []int) bool {
 		}
 	}
 	return false
+}
+
+func higher(number1, number2 int) int {
+	if number1 > number2 {
+		return number1
+	}
+	return number2
 }

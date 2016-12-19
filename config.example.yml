@@ -47,3 +47,6 @@ targets:
         down_limit: 50
         up_step: 30
         down_step: 10
+
+plugins:
+    down_limit_advisor: "plugins/down_limit_advisor.example.sh"
