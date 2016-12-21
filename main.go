@@ -150,6 +150,12 @@ func triggerHandler(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+
+	if webhookMessage.Status == "resolved" {
+		w.WriteHeader(200)
+		return
+	}
+
 	if config.Global.Verbose {
 		log.Println(req.RemoteAddr)
 		pretty.Println(webhookMessage)
