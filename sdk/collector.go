@@ -6,7 +6,6 @@ import (
 	"github.com/xh4n3/ucloud-sdk-go/service/umon"
 	"github.com/xh4n3/ucloud-sdk-go/service/unet"
 	"log"
-	"strings"
 )
 
 type Collector struct {
