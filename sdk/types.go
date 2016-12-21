@@ -13,6 +13,7 @@ type Global struct {
 	MertricPort string `yaml:"mertric_port"`
 	Interval    int    `yaml:"interval"`
 	DryRun      bool   `yaml:"dry_run"`
+	Verbose     bool   `yaml:"verbose"`
 }
 
 type Plugins struct {

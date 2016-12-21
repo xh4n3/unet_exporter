@@ -70,12 +70,7 @@ func (c *Collector) ListBandwidthUsages() map[string]float32 {
 		if resourceName, ok := c.eipResourceMap[bandwidth.EIPId]; ok {
 			resourceBandwidthMap[resourceName] = bandwidth.CurBandwidth
 		} else {
-			//EIPId starts with "eip"
-			if strings.Contains(bandwidth.EIPId, "eip") {
-				log.Printf("cannot find resourceName for EIP %v, please restart me after adding eip\n", bandwidth.EIPId)
-			} else {
-				continue
-			}
+			continue
 		}
 	}
 

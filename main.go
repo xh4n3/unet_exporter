@@ -19,6 +19,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"github.com/kr/pretty"
 )
 
 var (
@@ -148,6 +149,10 @@ func triggerHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println(err)
 		w.WriteHeader(500)
 		return
+	}
+	if config.Global.Verbose {
+		log.Println(req.RemoteAddr)
+		pretty.Println(webhookMessage)
 	}
 
 	var shareBandwidthID string

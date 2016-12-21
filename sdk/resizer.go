@@ -103,16 +103,18 @@ func (r *Resizer) CurrentLimitAndStep() (int, int, int, int) {
 			defaultLimit = limit
 		}
 		if contains(weekdayNow, limit.WeekDays) && contains(hourNow, limit.Hours) {
-			log.Printf("Limit template: %v	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", limit.Name, limit.UpLimit, higher(limit.DownLimit, r.AdvisedDownLimit()), limit.UpStep, limit.DownStep)
-			return limit.UpLimit, higher(limit.DownLimit, r.AdvisedDownLimit()), limit.UpStep, limit.DownStep
+			downLimit := higher(limit.DownLimit, r.AdvisedDownLimit())
+			log.Printf("Limit template: %v	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", limit.Name, limit.UpLimit, downLimit, limit.UpStep, limit.DownStep)
+			return limit.UpLimit, downLimit, limit.UpStep, limit.DownStep
 		}
 	}
 	if defaultLimit == nil {
 		log.Fatalln("No default limit specified")
 	}
 
-	log.Printf("Limit template: default	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", defaultLimit.UpLimit, higher(defaultLimit.DownLimit, r.AdvisedDownLimit()), defaultLimit.UpStep, defaultLimit.DownStep)
-	return defaultLimit.UpLimit, higher(defaultLimit.DownLimit, r.AdvisedDownLimit()), defaultLimit.UpStep, defaultLimit.DownStep
+	downLimit := higher(defaultLimit.DownLimit, r.AdvisedDownLimit())
+	log.Printf("Limit template: default	UpLimit: %v	DownLimit: %v	UpStep: %v	DownStep: %v", defaultLimit.UpLimit, downLimit, defaultLimit.UpStep, defaultLimit.DownStep)
+	return defaultLimit.UpLimit, downLimit, defaultLimit.UpStep, defaultLimit.DownStep
 }
 
 func (r *Resizer) AdvisedDownLimit() int {

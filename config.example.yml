@@ -9,6 +9,8 @@ global:
   interval: 10
   # If enabled, it will not change bandwidth
   dry_run: false
+  # Prints alert webhook body
+  verbose: false
 
 # A list of shareBandwidth to be monitored
 targets:
