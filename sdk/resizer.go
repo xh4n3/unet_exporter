@@ -17,7 +17,6 @@ type Resizer struct {
 	uNet             *unet.UNet
 	verbose          bool
 	dryRun           bool
-	downLimitAdvisor string
 	lastSetBandwidth int
 }
 
@@ -140,9 +139,11 @@ func (r *Resizer) AdvisedBandwidth() int {
 }
 
 func (r *Resizer) RunQuery(query string) (int, error) {
-	val, err := r.apiClient.Query(context.Background(), query, time.Now())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+	defer cancel()
+	val, err := r.apiClient.Query(ctx, query, time.Now())
 	if err != nil {
-		log.Println(err)
+		return 0, err
 	}
 	if vector, ok := val.(model.Vector); ok && vector.Len() > 0 {
 		for _, sample := range val.(model.Vector) {

@@ -85,7 +85,6 @@ func main() {
 
 	go func() {
 		for {
-
 			resourceBandwidthMap := collector.ListBandwidthUsages()
 			currentBandwidth, err := collector.GetCurrentBandwidth()
 			bandwidthTotalUsed := collector.GetTotalBandwidth()
