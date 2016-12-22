@@ -3,7 +3,6 @@ package sdk
 type Config struct {
 	Global  *Global   `yaml:"global"`
 	Targets []*Target `yaml:"targets"`
-	Plugins *Plugins  `yaml:"plugins"`
 }
 
 type Global struct {
@@ -16,23 +15,19 @@ type Global struct {
 	Verbose     bool   `yaml:"verbose"`
 }
 
-type Plugins struct {
-	DownLimitAdvisor string `yaml:"down_limit_advisor"`
-}
-
 type Target struct {
 	Name             string         `yaml:"name"`
 	Region           string         `yaml:"region"`
 	DefaultBandwidth int            `yaml:"default_bandwidth"`
 	VariedLimits     []*VariedLimit `yaml:"varied_limits"`
+	RaiseRatio       int            `yaml:"raise_ratio"`
+	QueryEndpoint    string         `yaml:"query_endpoint"`
 }
 
 type VariedLimit struct {
 	Name      string `yaml:"name"`
 	UpLimit   int    `yaml:"up_limit"`
 	DownLimit int    `yaml:"down_limit"`
-	UpStep    int    `yaml:"up_step"`
-	DownStep  int    `yaml:"down_step"`
 	WeekDays  []int  `yaml:"weekdays"`
 	Hours     []int  `yaml:"hours"`
 }

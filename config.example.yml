@@ -20,6 +20,8 @@ targets:
     region: "cn-bj1"
     # set to 100 when exiting
     default_bandwidth: 100
+    # raise bandwidth by 20%
+    raise_ratio: 20
     varied_limit:
         # define different parameters for different day or time
       - name: "weekdays_peak"
@@ -31,24 +33,13 @@ targets:
         up_limit: 200
         # lower limit of this shareBandwidth
         down_limit: 50
-        # turn up bandwidth by 30MB every time
-        up_step: 30
-        # turn down bandwidth by 10MB every time
-        down_step: 10
 
       - name: "weekends_valley"
         weekdays: [0,6]
         up_limit: 200
         down_limit: 50
-        up_step: 30
-        down_step: 10
 
         # a limit with name 'default' will be used as default bandwidth limit
       - name: "default"
         up_limit: 200
         down_limit: 50
-        up_step: 30
-        down_step: 10
-
-plugins:
-    down_limit_advisor: "plugins/down_limit_advisor.example.sh"
