@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xh4n3/ucloud-sdk-go/service/umon"
@@ -19,7 +17,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"github.com/kr/pretty"
 )
 
 var (
@@ -82,11 +79,12 @@ func main() {
 	collector := sdk.NewCollector(uNet, uMon, shareBandwidth)
 	collector.ListEIPs()
 
+	resizer := sdk.NewResizer(uNet, shareBandwidth, config)
+
 	log.Println("Collect looping started.")
 
 	go func() {
 		for {
-
 			resourceBandwidthMap := collector.ListBandwidthUsages()
 			currentBandwidth, err := collector.GetCurrentBandwidth()
 			bandwidthTotalUsed := collector.GetTotalBandwidth()
@@ -104,13 +102,15 @@ func main() {
 			TotalBandwidthUsage.WithLabelValues(shareBandwidth.Name).Set(float64(bandwidthTotalUsed))
 			CurrentBandwidth.WithLabelValues(shareBandwidth.Name).Set(float64(currentBandwidth))
 
+			resizer.SetToAdvisedBandwidth()
+
 			time.Sleep(time.Duration(time.Duration(config.Global.Interval) * time.Second))
 		}
 	}()
 
 	// Expose the registered metrics via HTTP.
 	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/trigger", triggerHandler)
+
 	go func() {
 		err := http.ListenAndServe(config.Global.MertricPort, nil)
 		if err != nil {
@@ -131,82 +131,13 @@ func main() {
 func switchToDefault() {
 	log.Println("switching to defaultBandwidth before exits")
 	for _, target := range config.Targets {
-	resizer := sdk.NewResizer(uNet, target, config)
-	err := resizer.SetCurrentBandwidth(target.DefaultBandwidth)
-	if err != nil {
-		log.Printf("switching err: %v", err)
-	}
+		resizer := sdk.NewResizer(uNet, target, config)
+		err := resizer.SetCurrentBandwidth(target.DefaultBandwidth)
+		if err != nil {
+			log.Printf("switching err: %v", err)
+		}
 	}
 	log.Println("Swiching to default finished, exiting.")
-}
-
-func triggerHandler(w http.ResponseWriter, req *http.Request) {
-	decoder := json.NewDecoder(req.Body)
-
-	var webhookMessage notify.WebhookMessage
-	err := decoder.Decode(&webhookMessage)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	if webhookMessage.Status == "resolved" {
-		w.WriteHeader(200)
-		return
-	}
-
-	if config.Global.Verbose {
-		log.Println(req.RemoteAddr)
-		pretty.Println(webhookMessage)
-	}
-
-	var shareBandwidthID string
-	var up bool
-	isResizerWebhook := false
-	for _, alert := range webhookMessage.Alerts {
-		if alert.Labels["job"] == "bandwidth-resizer" {
-			isResizerWebhook = true
-			shareBandwidthID = alert.Labels["shareBandwidth"]
-			if alert.Labels["alertname"] == "ShareBandwidthTooLow" {
-				up = true
-			}
-			break
-		}
-	}
-	if !isResizerWebhook {
-		return
-	}
-
-	for _, target := range config.Targets {
-		if target.Name == shareBandwidthID {
-			err = triggerResizer(up, target)
-			if err != nil {
-				log.Println(err)
-				break
-			} else {
-				w.WriteHeader(200)
-				return
-			}
-		}
-	}
-	w.WriteHeader(500)
-	return
-}
-
-func triggerResizer(up bool, target *sdk.Target) error {
-	resizer := sdk.NewResizer(uNet, target, config)
-	var err error
-	if up {
-		err = resizer.IncreaseBandwidth()
-	} else {
-		err = resizer.DecreaseBandwidth()
-	}
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return nil
 }
 
 func envClient(config *sdk.Config) (*unet.UNet, *umon.UMon) {
