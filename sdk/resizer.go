@@ -75,6 +75,12 @@ func (r *Resizer) SetToAdvisedBandwidth() {
 		r.SetCurrentBandwidth(advisedBandwidth)
 	} else {
 		log.Println("Advised bandwidth exceeded limit.")
+		if advisedBandwidth <= downLimit {
+			r.SetCurrentBandwidth(downLimit)
+		}
+		if advisedBandwidth >= upLimit {
+			r.SetCurrentBandwidth(upLimit)
+		}
 	}
 }
 

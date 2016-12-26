@@ -94,13 +94,14 @@ func main() {
 				BandwidthMetric.WithLabelValues(shareBandwidth.Name).Set(float64(0))
 			} else {
 				BandwidthMetric.WithLabelValues(shareBandwidth.Name).Set(float64(1))
+				CurrentBandwidth.WithLabelValues(shareBandwidth.Name).Set(float64(currentBandwidth))
 			}
 
 			for resourceName, usage := range resourceBandwidthMap {
 				ResourceBandwidthUsage.WithLabelValues(shareBandwidth.Name, resourceName).Set(float64(usage))
 			}
+
 			TotalBandwidthUsage.WithLabelValues(shareBandwidth.Name).Set(float64(bandwidthTotalUsed))
-			CurrentBandwidth.WithLabelValues(shareBandwidth.Name).Set(float64(currentBandwidth))
 
 			resizer.SetToAdvisedBandwidth()
 

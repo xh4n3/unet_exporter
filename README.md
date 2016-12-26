@@ -1,5 +1,5 @@
 # unet_exporter
-Prometheus exporter for unet
+Prometheus Exporter for UCloud ShareBandwidth Package
 
 ### Dockerfile Usage
 ```
@@ -11,7 +11,7 @@ COPY config.yml config.yml
 
 Pass PUBLIC_KEY and PUBLIC_KEY by `-e`, which will overrides keys in config file.
 
-### Prometheus Alerts
+### Prometheus
 ```
 ALERT ShareBandwidthTooHigh
   IF 100 * total_bandwidth_usage / current_bandwidth < 85
