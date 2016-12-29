@@ -16,18 +16,16 @@ type Global struct {
 }
 
 type Target struct {
-	Name             string         `yaml:"name"`
-	Region           string         `yaml:"region"`
-	DefaultBandwidth int            `yaml:"default_bandwidth"`
-	VariedLimits     []*VariedLimit `yaml:"varied_limits"`
-	RaiseRatio       int            `yaml:"raise_ratio"`
-	QueryEndpoint    string         `yaml:"query_endpoint"`
+	Name             string     `yaml:"name"`
+	Region           string     `yaml:"region"`
+	DefaultBandwidth int        `yaml:"default_bandwidth"`
+	RaiseRatio       int        `yaml:"raise_ratio"`
+	QueryEndpoint    string     `yaml:"query_endpoint"`
+	HardLimit        *HardLimit `yaml:"hard_limit"`
+	VariedLimits     []string   `yaml:"varied_limits"`
 }
 
-type VariedLimit struct {
-	Name      string `yaml:"name"`
-	UpLimit   int    `yaml:"up_limit"`
-	DownLimit int    `yaml:"down_limit"`
-	WeekDays  []int  `yaml:"weekdays"`
-	Hours     []int  `yaml:"hours"`
+type HardLimit struct {
+	UpLimit   int `yaml:"up_limit"`
+	DownLimit int `yaml:"down_limit"`
 }

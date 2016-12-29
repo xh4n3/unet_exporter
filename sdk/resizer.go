@@ -68,9 +68,7 @@ func (r *Resizer) SetToAdvisedBandwidth() {
 		log.Printf("Advisor suggests %v", advisedBandwidth)
 	}
 	upLimit, downLimit := r.CurrentLimit()
-	if r.verbose {
-		log.Printf("bandwidth limit now %v %v", upLimit, downLimit)
-	}
+
 	if advisedBandwidth <= upLimit && advisedBandwidth >= downLimit {
 		r.SetCurrentBandwidth(advisedBandwidth)
 	} else {
@@ -85,56 +83,20 @@ func (r *Resizer) SetToAdvisedBandwidth() {
 }
 
 func (r *Resizer) CurrentLimit() (int, int) {
-	now := time.Now()
-	hourNow, _, _ := now.Clock()
-	weekdayNow := int(now.Weekday())
-
-	var defaultLimit *VariedLimit
-
-	for _, limit := range r.target.VariedLimits {
-		if limit.Name == "default" {
-			defaultLimit = limit
-		}
-		if contains(weekdayNow, limit.WeekDays) && contains(hourNow, limit.Hours) {
-			if r.verbose {
-				log.Printf("Limit template: %v	UpLimit: %v	DownLimit: %v", limit.Name, limit.UpLimit, limit.DownLimit)
-			}
-			return limit.UpLimit, limit.DownLimit
-		}
-	}
-	if defaultLimit == nil {
-		log.Fatalln("No default limit specified")
-	}
-
-	log.Printf("Limit template: default	UpLimit: %v	DownLimit: %v", defaultLimit.UpLimit, defaultLimit.DownLimit)
-	return defaultLimit.UpLimit, defaultLimit.DownLimit
+	log.Printf("Hardlimit Up: %v	Down: %v", r.target.HardLimit.UpLimit, r.target.HardLimit.DownLimit)
+	return r.target.HardLimit.UpLimit, r.target.HardLimit.DownLimit
 }
 
 func (r *Resizer) AdvisedBandwidth() int {
 	bandwidthLimits := []int{}
 
-	oneWeekAgo := "max_over_time(total_bandwidth_usage[30m] offset 7d)"
-	oneWeekAgoBandwidth, err := r.RunQuery(oneWeekAgo)
-	if err != nil {
-		log.Println(err)
-	} else {
-		bandwidthLimits = append(bandwidthLimits, oneWeekAgoBandwidth)
-	}
-
-	oneDayAgo := "max_over_time(total_bandwidth_usage[30m] offset 1d)"
-	oneDayAgoBandwidth, err := r.RunQuery(oneDayAgo)
-	if err != nil {
-		log.Println(err)
-	} else {
-		bandwidthLimits = append(bandwidthLimits, oneDayAgoBandwidth)
-	}
-
-	current := "max_over_time(total_bandwidth_usage[10m])"
-	currentBandwidth, err := r.RunQuery(current)
-	if err != nil {
-		log.Println(err)
-	} else {
-		bandwidthLimits = append(bandwidthLimits, currentBandwidth)
+	for _, query := range r.target.VariedLimits {
+		bandwidthLimit, err := r.RunQuery(query)
+		if err != nil {
+			log.Println(err)
+		} else {
+			bandwidthLimits = append(bandwidthLimits, bandwidthLimit)
+		}
 	}
 
 	if highestLimit := highest(bandwidthLimits); highestLimit > 0 {
@@ -145,7 +107,7 @@ func (r *Resizer) AdvisedBandwidth() int {
 }
 
 func (r *Resizer) RunQuery(query string) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
 	defer cancel()
 	val, err := r.apiClient.Query(ctx, query, time.Now())
 	if err != nil {
@@ -162,15 +124,6 @@ func (r *Resizer) RunQuery(query string) (int, error) {
 		}
 	}
 	return 0, errors.New("query failed")
-}
-
-func contains(number int, numbers []int) bool {
-	for _, num := range numbers {
-		if num == number {
-			return true
-		}
-	}
-	return false
 }
 
 func highest(numbers []int) int {
