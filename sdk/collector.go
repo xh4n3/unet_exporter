@@ -101,6 +101,10 @@ func bandwidthLabel(eipset unet.EIPSet) string {
 	for _, ip := range *eipset.EIPAddr {
 		ips += "_" + ip.IP
 	}
-	return fmt.Sprintf("%v%v", eipset.Resource.ResourceType, ips)
+	if eipset.Resource != nil && eipset.Resource.ResourceType != nil {
+		return fmt.Sprintf("%v%v", eipset.Resource.ResourceType, ips)
+	} else {
+		return fmt.Sprintf("unknown%v", ips)
+	}
 
 }
