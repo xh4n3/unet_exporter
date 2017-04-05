@@ -80,6 +80,7 @@ func (r *Resizer) SetToAdvisedBandwidth() error {
 			return r.SetCurrentBandwidth(upLimit)
 		}
 	}
+	return nil
 }
 
 func (r *Resizer) CurrentLimit() (int, int) {

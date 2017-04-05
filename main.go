@@ -65,6 +65,7 @@ func init() {
 	prometheus.MustRegister(TotalBandwidthUsage)
 	prometheus.MustRegister(CurrentBandwidth)
 	prometheus.MustRegister(BandwidthMetric)
+	prometheus.MustRegister(CanSetBandwidth)
 }
 
 func main() {
