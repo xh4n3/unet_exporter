@@ -62,7 +62,7 @@ func (r *Resizer) SetCurrentBandwidth(newBandwidth int) error {
 	return nil
 }
 
-func (r *Resizer) SetToAdvisedBandwidth() {
+func (r *Resizer) SetToAdvisedBandwidth() error {
 	advisedBandwidth := r.AdvisedBandwidth()
 	if r.verbose {
 		log.Printf("Advisor suggests %v", advisedBandwidth)
@@ -70,14 +70,14 @@ func (r *Resizer) SetToAdvisedBandwidth() {
 	upLimit, downLimit := r.CurrentLimit()
 
 	if advisedBandwidth <= upLimit && advisedBandwidth >= downLimit {
-		r.SetCurrentBandwidth(advisedBandwidth)
+		return r.SetCurrentBandwidth(advisedBandwidth)
 	} else {
 		log.Println("Advised bandwidth exceeded limit.")
 		if advisedBandwidth <= downLimit {
-			r.SetCurrentBandwidth(downLimit)
+			return r.SetCurrentBandwidth(downLimit)
 		}
 		if advisedBandwidth >= upLimit {
-			r.SetCurrentBandwidth(upLimit)
+			return r.SetCurrentBandwidth(upLimit)
 		}
 	}
 }
@@ -99,7 +99,8 @@ func (r *Resizer) AdvisedBandwidth() int {
 		}
 	}
 
-	if highestLimit := highest(bandwidthLimits); highestLimit > 0 {
+	// highestLimit might be zero, so check if it is between downLimit and upLimit
+	if highestLimit := highest(bandwidthLimits); highestLimit >= 0 {
 		return int((100 + r.target.RaiseRatio) * highestLimit / 100)
 	} else {
 		return r.target.DefaultBandwidth

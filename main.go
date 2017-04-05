@@ -48,6 +48,13 @@ var (
 		},
 		[]string{"shareBandwidth"},
 	)
+	CanSetBandwidth = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "can_set_bandwidth",
+			Help: "ucloud api returns good when setting new bandwidth",
+		},
+		[]string{"shareBandwidth"},
+	)
 	config *sdk.Config
 	uNet   *unet.UNet
 	uMon   *umon.UMon
@@ -90,7 +97,7 @@ func main() {
 			bandwidthTotalUsed := collector.GetTotalBandwidth()
 
 			if err != nil {
-				log.Println(err)
+				log.Printf("getting bandwidth usage on ucloud error: %v\n", err.Error())
 				BandwidthMetric.WithLabelValues(shareBandwidth.Name).Set(float64(0))
 			} else {
 				BandwidthMetric.WithLabelValues(shareBandwidth.Name).Set(float64(1))
@@ -103,7 +110,13 @@ func main() {
 
 			TotalBandwidthUsage.WithLabelValues(shareBandwidth.Name).Set(float64(bandwidthTotalUsed))
 
-			resizer.SetToAdvisedBandwidth()
+			err = resizer.SetToAdvisedBandwidth()
+			if err != nil {
+				log.Printf("setting advised bandwidth on ucloud error: %v\n", err.Error())
+				CanSetBandwidth.WithLabelValues(shareBandwidth.Name).Set(float64(0))
+			} else {
+				CanSetBandwidth.WithLabelValues(shareBandwidth.Name).Set(float64(1))
+			}
 
 			time.Sleep(time.Duration(time.Duration(config.Global.Interval) * time.Second))
 		}
