@@ -1,0 +1,8 @@
+{
+	"ImportPath": "github.com/xh4n3/ucloud-sdk-go",
+	"GoVersion": "go1.5",
+	"Packages": [
+		"github.com/xh4n3/ucloud-sdk-go/ucloud/client"
+	],
+	"Deps": []
+}

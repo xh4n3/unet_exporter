@@ -1,0 +1,100 @@
+{
+    "memo": "edd641bd49fbb097615b612a017e0d97433c88afac27687ba854aa017b48de3a",
+    "projects": [
+        {
+            "name": "github.com/beorn7/perks",
+            "branch": "master",
+            "revision": "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9",
+            "packages": [
+                "quantile"
+            ]
+        },
+        {
+            "name": "github.com/golang/protobuf",
+            "branch": "master",
+            "revision": "874264fbbb43f4d91e999fecb4b40143ed611400",
+            "packages": [
+                "proto"
+            ]
+        },
+        {
+            "name": "github.com/matttproud/golang_protobuf_extensions",
+            "branch": "master",
+            "revision": "c12348ce28de40eed0136aa2b644d0ee0650e56c",
+            "packages": [
+                "pbutil"
+            ]
+        },
+        {
+            "name": "github.com/pkg/errors",
+            "branch": "master",
+            "revision": "a887431f7f6ef7687b556dbf718d9f351d4858a0",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/prometheus/client_golang",
+            "version": "v0.8.0",
+            "revision": "c5b7fccd204277076155f10851dad72b76a49317",
+            "packages": [
+                "api/prometheus",
+                "prometheus",
+                "prometheus/promhttp"
+            ]
+        },
+        {
+            "name": "github.com/prometheus/client_model",
+            "branch": "master",
+            "revision": "fa8ad6fec33561be4280a8f0514318c79d7f6cb6",
+            "packages": [
+                "go"
+            ]
+        },
+        {
+            "name": "github.com/prometheus/common",
+            "branch": "master",
+            "revision": "0d5de9d6d8629cb8bee6d4674da4127cd8b615a3",
+            "packages": [
+                "expfmt",
+                "model"
+            ]
+        },
+        {
+            "name": "github.com/prometheus/procfs",
+            "branch": "master",
+            "revision": "abf152e5f3e97f2fafac028d2cc06c1feb87ffa5",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/xh4n3/ucloud-sdk-go",
+            "branch": "master",
+            "revision": "5c8b4e6217c060d2c7802674b8e5c2a0c3218664",
+            "packages": [
+                "service/umon",
+                "service/unet",
+                "ucloud",
+                "ucloud/auth"
+            ]
+        },
+        {
+            "name": "golang.org/x/net",
+            "branch": "release-branch.go1.7",
+            "revision": "d4c55e66d8c3a2f3382d264b08e3e3454a66355a",
+            "packages": [
+                "context",
+                "context/ctxhttp"
+            ]
+        },
+        {
+            "name": "gopkg.in/yaml.v2",
+            "branch": "master",
+            "revision": "a83829b6f1293c91addabc89d0571c246397bbf4",
+            "packages": [
+                "."
+            ]
+        }
+    ]
+}
