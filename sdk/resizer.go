@@ -100,6 +100,12 @@ func (r *Resizer) AdvisedBandwidth() int {
 		}
 	}
 
+	if len(bandwidthLimits) == 0 {
+		// all queries failed
+		log.Println("All queries failed, setting to default badndwidth.")
+		return r.target.DefaultBandwidth
+	}
+
 	// highestLimit might be zero, so check if it is between downLimit and upLimit
 	if highestLimit := highest(bandwidthLimits); highestLimit >= 0 {
 		return int((100 + r.target.RaiseRatio) * highestLimit / 100)
